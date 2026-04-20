@@ -1,0 +1,5 @@
+{
+  "daily_limit_minutes": 120,
+  "warn_at_minutes_remaining": [15, 10, 5],
+  "check_interval_seconds": 5
+}
