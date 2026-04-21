@@ -186,6 +186,7 @@ class App(ctk.CTk):
             on_status_update=self._on_status_update,
             on_warning=self._on_warning,
             on_limit_reached=self._on_limit_reached,
+            on_game_start=self._on_game_start,
         )
         self._monitor.start()
         self._toggle_btn.configure(
@@ -208,6 +209,75 @@ class App(ctk.CTk):
             self._start_monitor()
 
     # ------------------------------------------------------------------ callbacks
+
+    def _on_game_start(self):
+        """Called from the background thread when Overwatch is detected launching.
+        Blocks until the user responds. Returns True to allow play, False to kill the game."""
+        result_event = threading.Event()
+        allowed = [False]
+
+        def _show_dialog():
+            self.deiconify()
+            self.lift()
+            self.focus_force()
+
+            dialog = ctk.CTkToplevel(self)
+            dialog.title("Earn Your Play Time")
+            dialog.geometry("420x210")
+            dialog.resizable(False, False)
+            dialog.lift()
+            dialog.focus_force()
+            dialog.grab_set()
+
+            ctk.CTkLabel(
+                dialog,
+                text="Did you complete your planned tasks?",
+                font=ctk.CTkFont(size=17, weight="bold"),
+                wraplength=380,
+            ).pack(pady=(30, 6), padx=20)
+
+            ctk.CTkLabel(
+                dialog,
+                text="Overwatch will only launch if you earned your play time.",
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                wraplength=380,
+            ).pack(pady=(0, 22))
+
+            btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+            btn_frame.pack(fill="x", padx=30)
+
+            def _yes():
+                allowed[0] = True
+                dialog.destroy()
+                result_event.set()
+
+            def _no():
+                allowed[0] = False
+                dialog.destroy()
+                result_event.set()
+
+            dialog.protocol("WM_DELETE_WINDOW", _no)
+
+            ctk.CTkButton(
+                btn_frame,
+                text="Yes, let me play!",
+                fg_color=COLOR_GREEN,
+                hover_color=COLOR_GREEN_HOVER,
+                command=_yes,
+            ).pack(side="left", expand=True, padx=(0, 6))
+
+            ctk.CTkButton(
+                btn_frame,
+                text="Not yet",
+                fg_color=COLOR_RED,
+                hover_color=COLOR_RED_HOVER,
+                command=_no,
+            ).pack(side="right", expand=True, padx=(6, 0))
+
+        self.after(0, _show_dialog)
+        result_event.wait()
+        return allowed[0]
 
     def _on_status_update(self, ow_running, played_today_sec, remaining_sec):
         self.after(0, lambda: self._apply_status(ow_running, played_today_sec, remaining_sec))

@@ -59,11 +59,12 @@ def kill_overwatch():
 class LimiterThread(threading.Thread):
     """Background thread that monitors Overwatch and enforces the daily time limit."""
 
-    def __init__(self, on_status_update=None, on_warning=None, on_limit_reached=None):
+    def __init__(self, on_status_update=None, on_warning=None, on_limit_reached=None, on_game_start=None):
         super().__init__(daemon=True)
         self.on_status_update = on_status_update
         self.on_warning = on_warning
         self.on_limit_reached = on_limit_reached
+        self.on_game_start = on_game_start
         self._stop_event = threading.Event()
 
     def stop(self):
@@ -87,6 +88,13 @@ class LimiterThread(threading.Thread):
             proc = find_overwatch()
 
             if proc and session_start is None:
+                # Ask user if they earned their play time before starting the session
+                if self.on_game_start:
+                    allowed = self.on_game_start()
+                    if not allowed:
+                        kill_overwatch()
+                        self._stop_event.wait(interval)
+                        continue
                 session_start = time.time()
                 if played_so_far >= daily_limit_sec:
                     if self.on_limit_reached:
