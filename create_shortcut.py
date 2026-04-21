@@ -47,7 +47,13 @@ def create_shortcut():
     if not pythonw.exists():
         pythonw = Path(sys.executable)
 
-    # Desktop shortcut
+    # Desktop shortcut — use PowerShell to get the real desktop path (handles OneDrive redirection)
+    desktop_result = subprocess.run(
+        ["powershell", "-Command", "[Environment]::GetFolderPath('Desktop')"],
+        capture_output=True, text=True
+    )
+    desktop_dir = Path(desktop_result.stdout.strip())
+    shortcut_path = desktop_dir / "Overwatch Limiter.lnk"
     result = _make_shortcut(pythonw, app_path, app_dir, icon_path, shortcut_path)
     if result.returncode == 0:
         print(f"Desktop shortcut created: {shortcut_path}")
