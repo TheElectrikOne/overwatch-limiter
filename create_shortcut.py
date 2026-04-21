@@ -23,11 +23,7 @@ def create_shortcut():
     app_dir = Path(__file__).parent.resolve()
     app_path = app_dir / "app.py"
     icon_path = app_dir / "icon.ico"
-    import ctypes.wintypes
-    buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(0, 0x0000, 0, 0, buf)
-    desktop = Path(buf.value)
-    shortcut_path = desktop / "Overwatch Limiter.lnk"
+    shortcut_path = app_dir / "Overwatch Limiter.lnk"
 
     print("Saving icon...")
     _save_icon(icon_path)
